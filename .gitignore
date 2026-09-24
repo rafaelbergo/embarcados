@@ -1,0 +1,10 @@
+/MyBlinky/
+/MyBlinky2/
+/MyBlinky3/
+/MyBlinky4/
+/TivaWare_C_Series-2.2.0.295/
+
+# Arquivos de compilação e temporários (Keil uVision)
+Listings/
+Objects/
+*.uvguix.*
