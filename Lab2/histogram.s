@@ -1,4 +1,7 @@
-
+    AREA    |.text|, CODE, READONLY, ALIGN=2
+    THUMB
+    EXPORT  EightBitHistogram_ASM
+		
 ;uint16_t EightBitHistogram_ASM(uint16_t width, uint16_t height, uint8_t * p_image, uint16_t * p_histogram);
 ; R0 = width
 ; R1 = height
