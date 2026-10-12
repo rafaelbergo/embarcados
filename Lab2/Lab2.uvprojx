@@ -398,6 +398,11 @@
               <FileType>2</FileType>
               <FilePath>.\histogram.s</FilePath>
             </File>
+            <File>
+              <FileName>uartstdio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TivaWare_C_Series-2.2.0.295\utils\uartstdio.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
