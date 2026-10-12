@@ -9,7 +9,6 @@
 #include "driverlib/pin_map.h"
 #include "utils/uartstdio.h"
 
-/*
 #define WIDTH0 4
 #define HEIGTH0 3
 const uint8_t image0[HEIGTH0][WIDTH0] = 
@@ -17,7 +16,7 @@ const uint8_t image0[HEIGTH0][WIDTH0] =
     { 20,  16,  16,  18},
     {255, 255,   0,   0},
     { 32,  32,  32,  32}
-};*/
+};
 
 // Variaveis de images.c
 extern const uint16_t width1;
@@ -49,6 +48,7 @@ int main(void)
 
     // Calcula o Histograma
     //pixels_processados = EightBitHistogram_C(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
+		//pixels_processados = EightBitHistogram_ASM(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
 		pixels_processados = EightBitHistogram_ASM(width1, height1, (uint8_t *)p_start_image1, meu_histograma);
 	
 		UARTprintf("Pixels Processados: %d\n", pixels_processados);

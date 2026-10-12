@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 // Std test image 1 - lab with shapes
-
+/*
 #define WIDTH0  4
 #define HEIGTH0 3
 const uint16_t width0  = WIDTH0;
@@ -18,7 +18,7 @@ const uint8_t image0[HEIGTH0][WIDTH0] = {
     { 0, 0, 0, 0}, {0, 0, 0, 0}, {0,0,0,0}
 };
 const uint8_t * const p_start_image0 = &image0[0][0];
-
+*/
 
 // test image
 #define WIDTH1  160
