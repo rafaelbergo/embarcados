@@ -21,6 +21,7 @@ const uint8_t image0[HEIGTH0][WIDTH0] =
 uint16_t meu_histograma[256];
 
 uint16_t EightBitHistogram_C(uint16_t width, uint16_t height, uint8_t * p_image, uint16_t * p_histogram);
+extern uint16_t EightBitHistogram_ASM(uint16_t width, uint16_t height, uint8_t * p_image, uint16_t * p_histogram);
 
 int main(void)
 {
@@ -41,8 +42,9 @@ int main(void)
     uint16_t pixels_processados;
 
     // Calcula o Histograma
-    pixels_processados = EightBitHistogram_C(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
-    
+    //pixels_processados = EightBitHistogram_C(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
+    pixels_processados = EightBitHistogram_ASM(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
+	
 		UARTprintf("Pixels Processados: %d\n", pixels_processados);
     UARTprintf("X\tY\n");
     for (int i = 0; i < 256; i++)
