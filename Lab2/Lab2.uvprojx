@@ -403,6 +403,11 @@
               <FileType>1</FileType>
               <FilePath>..\TivaWare_C_Series-2.2.0.295\utils\uartstdio.c</FilePath>
             </File>
+            <File>
+              <FileName>images.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\images.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -9,6 +9,7 @@
 #include "driverlib/pin_map.h"
 #include "utils/uartstdio.h"
 
+/*
 #define WIDTH0 4
 #define HEIGTH0 3
 const uint8_t image0[HEIGTH0][WIDTH0] = 
@@ -16,7 +17,12 @@ const uint8_t image0[HEIGTH0][WIDTH0] =
     { 20,  16,  16,  18},
     {255, 255,   0,   0},
     { 32,  32,  32,  32}
-};
+};*/
+
+// Variaveis de images.c
+extern const uint16_t width1;
+extern const uint16_t height1;
+extern const uint8_t * const p_start_image1;
 
 uint16_t meu_histograma[256];
 
@@ -28,7 +34,7 @@ int main(void)
 	  //Configura o clock para utilizar o xtal interno de 16MHz com PLL para 40MHz
 		SysCtlClockFreqSet(SYSCTL_OSC_INT | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_320, 40000000);
   
-		// Configuração UART0
+		// Configuracao UART0
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
 	
@@ -43,7 +49,7 @@ int main(void)
 
     // Calcula o Histograma
     //pixels_processados = EightBitHistogram_C(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
-    pixels_processados = EightBitHistogram_ASM(WIDTH0, HEIGTH0, (uint8_t *)image0, meu_histograma);
+		pixels_processados = EightBitHistogram_ASM(width1, height1, (uint8_t *)p_start_image1, meu_histograma);
 	
 		UARTprintf("Pixels Processados: %d\n", pixels_processados);
     UARTprintf("X\tY\n");
