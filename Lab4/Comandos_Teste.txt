@@ -1,0 +1,209 @@
+﻿================================================================================
+ ELF74 - SISTEMAS EMBARCADOS
+ Laboratório 4 - Comunicação Serial: protocolo de 4 relés
+ ROTEIRO DE TESTE: comandos, respostas esperadas e estado dos LEDs
+================================================================================
+
+ ARQUIVO PARA GRAVAR NA PLACA
+   Lab4\Objects\Lab4.hex        (use este no Keil / gravador)
+   Lab4\Objects\Lab4.bin        (gerado também, para o LMFlashProgrammer)
+
+ COMO CONECTAR
+   Porta serial : a COM virtual do depurador ICDI da Launchpad.
+                  Veja em Gerenciador de Dispositivos -> Portas (COM e LPT)
+                  -> "Stellaris Virtual Serial Port (COMx)".
+   Parâmetros   : 115200 bps, 8 bits de dados, sem paridade, 1 stop bit,
+                  sem controle de fluxo.
+                  (a placa usa a UART0 nos pinos PA0 = RX e PA1 = TX)
+   Terminal     : sscom3.2.exe ou Lab4_Serial.exe
+
+ COMO ENVIAR
+   Envie SEMPRE os 4 caracteres do comando. Não precisa de CR nem de LF.
+   Se o seu terminal acrescentar CR/LF isso NÃO atrapalha: qualquer byte fora
+   do protocolo é descartado e o parser volta a esperar um '#'.
+   A placa NÃO repete o comando recebido: na tela aparecem apenas os 4
+   caracteres da resposta, que sempre começam com '@'.
+
+ LIGAÇÃO DOS RELÉS NOS LEDs DA PLACA
+   Relé 0 -> LED1 -> PN1          Relé 1 -> LED2 -> PN0
+   Relé 2 -> LED3 -> PF4          Relé 3 -> LED4 -> PF0
+   LED aceso = relé ligado;   LED apagado = relé desligado.
+   ON  = aceso / ligado
+   OFF = apagado / desligado
+
+
+================================================================================
+ 1) TESTE RÁPIDO - sequência única, o estado vai acumulando
+================================================================================
+ Confira a resposta na tela E os LEDs na placa a cada passo.
+
+   #   Comando   Resposta   LED1   LED2   LED3   LED4   O que acontece
+   --  --------  --------   ----   ----   ----   ----   ------------------------
+    1  #TX0      @TX0       OFF    OFF    OFF    OFF    desliga os 4 relés
+    2  #R01      @R01       ON     OFF    OFF    OFF    liga o Relé 0
+    3  #R11      @R11       ON     ON     OFF    OFF    liga o Relé 1
+    4  #R21      @R21       ON     ON     ON     OFF    liga o Relé 2
+    5  #R31      @R31       ON     ON     ON     ON     liga o Relé 3
+    6  #TST      @TSO       ON     ON     ON     ON     status: os 4 ligados
+    7  #R20      @R20       ON     ON     OFF    ON     desliga só o Relé 2
+    8  #TST      @TSM       ON     ON     OFF    ON     status confere
+    9  #R10      @R10       ON     OFF    OFF    ON     desliga só o Relé 1
+   10  #TST      @TSI       ON     OFF    OFF    ON     status confere
+   11  #R00      @R00       OFF    OFF    OFF    ON     desliga só o Relé 0
+   12  #TST      @TSA       OFF    OFF    OFF    ON     status confere
+   13  #R30      @R30       OFF    OFF    OFF    OFF    desliga só o Relé 3
+   14  #TST      @TS@       OFF    OFF    OFF    OFF    status: os 4 desligados
+   15  #TX1      @TX1       ON     ON     ON     ON     liga os 4 de uma vez
+   16  #TST      @TSO       ON     ON     ON     ON     status confere
+   17  #TX0      @TX0       OFF    OFF    OFF    OFF    desliga os 4 de uma vez
+
+
+================================================================================
+ 2) TESTE DE CADA RELÉ ISOLADO - sempre partindo de #TX0
+================================================================================
+ Serve para confirmar que cada comando acende o LED certo (e não um vizinho).
+
+   Comando   Resposta   LED1   LED2   LED3   LED4
+   --------  --------   ----   ----   ----   ----
+   #TX0      @TX0       OFF    OFF    OFF    OFF
+   #R01      @R01       ON     OFF    OFF    OFF    <- só o Relé 0 / LED1
+   #R00      @R00       OFF    OFF    OFF    OFF
+
+   #TX0      @TX0       OFF    OFF    OFF    OFF
+   #R11      @R11       OFF    ON     OFF    OFF    <- só o Relé 1 / LED2
+   #R10      @R10       OFF    OFF    OFF    OFF
+
+   #TX0      @TX0       OFF    OFF    OFF    OFF
+   #R21      @R21       OFF    OFF    ON     OFF    <- só o Relé 2 / LED3
+   #R20      @R20       OFF    OFF    OFF    OFF
+
+   #TX0      @TX0       OFF    OFF    OFF    OFF
+   #R31      @R31       OFF    OFF    OFF    ON     <- só o Relé 3 / LED4
+   #R30      @R30       OFF    OFF    OFF    OFF
+
+ Obs.: repetir um comando que não muda nada (ex.: #R00 com o relé já desligado)
+       deve responder igual e não alterar os LEDs.
+
+
+================================================================================
+ 3) TABELA COMPLETA DO STATUS - os 16 estados possíveis
+================================================================================
+ Para cada linha: monte o estado com os comandos #R< n >1 e depois mande #TST.
+ O valor de status é  R0*8 + R1*4 + R2*2 + R3*1  (o Relé 0 é o bit mais
+ significativo) e o byte da resposta é  0x40 + valor.
+
+   Comandos para montar o estado      #TST     LED1   LED2   LED3   LED4
+   ---------------------------------  -------  ----   ----   ----   ----
+   (nenhum, tudo desligado)           @TS@     OFF    OFF    OFF    OFF
+   #R31                               @TSA     OFF    OFF    OFF    ON
+   #R21                               @TSB     OFF    OFF    ON     OFF
+   #R21 #R31                          @TSC     OFF    OFF    ON     ON
+   #R11                               @TSD     OFF    ON     OFF    OFF
+   #R11 #R31                          @TSE     OFF    ON     OFF    ON
+   #R11 #R21                          @TSF     OFF    ON     ON     OFF
+   #R11 #R21 #R31                     @TSG     OFF    ON     ON     ON
+   #R01                               @TSH     ON     OFF    OFF    OFF
+   #R01 #R31                          @TSI     ON     OFF    OFF    ON
+   #R01 #R21                          @TSJ     ON     OFF    ON     OFF
+   #R01 #R21 #R31                     @TSK     ON     OFF    ON     ON
+   #R01 #R11                          @TSL     ON     ON     OFF    OFF
+   #R01 #R11 #R31                     @TSM     ON     ON     OFF    ON
+   #R01 #R11 #R21                     @TSN     ON     ON     ON     OFF
+   #R01 #R11 #R21 #R31                @TSO     ON     ON     ON     ON
+   ------------------------------------------------------------------------
+   (equivalente: #TX0 = todos OFF e #TX1 = todos ON)
+
+ Os quatro estados de conferência rápida são:
+   #TX0 + #TST  ->  @TS@   (todos OFF)
+   #TX1 + #TST  ->  @TSO   (todos ON)
+   #R31 + #TST  ->  @TSA   (só o Relé 3)
+   #R01 + #TST  ->  @TSH   (só o Relé 0)
+
+
+================================================================================
+ 4) PACOTES INVÁLIDOS - NÃO devem responder e NÃO devem mexer nos LEDs
+================================================================================
+ Antes de cada teste, mande #TX0 para deixar tudo desligado.
+ O PDF não define resposta de erro, então o pacote inválido é simplesmente
+ ignorado (nada aparece na tela). Confira também que os LEDs não mudam.
+
+   Comando   Resposta esperada   Motivo
+   --------  -----------------   ------------------------------------------
+   #R41      (nenhuma)           não existe Relé 4 (o número vai de 0 a 3)
+   #R3X      (nenhuma)           o estado tem que ser '0' ou '1'
+   #X01      (nenhuma)           o tipo tem que ser 'R' ou 'T'
+   #TXY      (nenhuma)           em #TX o estado tem que ser '0' ou '1'
+   #TSX      (nenhuma)           o #TST termina sempre com 'T'
+   #TXX      (nenhuma)           em #TX o estado tem que ser '0' ou '1'
+   ABC       (nenhuma)           lixo puro, sem '#'
+   #R        (nenhuma)           pacote incompleto (só 2 bytes)
+
+
+================================================================================
+ 5) RESSINCRONIZAÇÃO - lixo antes ou no meio do pacote
+================================================================================
+ O parser reinicia sempre que encontra um '#'. Estes testes confirmam que um
+ pacote válido ainda é reconhecido depois de lixo.
+
+   Enviado         Resposta   LEDs depois
+   --------------  --------   ------------------------------------------
+   lixo#R31        @R31       só o LED4 aceso (Relé 3)
+   #TX#R01         @R01       só o LED1 aceso (Relé 0)
+   #R01#TST        @R01@TSH   LED1 aceso; as duas respostas em sequência
+   xxx#TX1         @TX1       os 4 LEDs acesos
+   #R1x#R11        @R11       LED2 aceso ('x' descarta o pacote anterior)
+
+
+================================================================================
+ 6) TABELA DE BYTES (se preferir mandar em hexadecimal)
+================================================================================
+ Todos os bytes são ASCII.
+
+   Comando   Bytes (hex)        Resposta   Bytes (hex)
+   --------  ----------------   --------   ----------------
+   #R01      23 52 30 31        @R01       40 52 30 31
+   #R11      23 52 31 31        @R11       40 52 31 31
+   #R21      23 52 32 31        @R21       40 52 32 31
+   #R31      23 52 33 31        @R31       40 52 33 31
+   #R00      23 52 30 30        @R00       40 52 30 30
+   #TX1      23 54 58 31        @TX1       40 54 58 31
+   #TX0      23 54 58 30        @TX0       40 54 58 30
+   #TST      23 54 53 54        @TS@       40 54 53 40
+                                @TSO       40 54 53 4F
+
+   Referência: '#'=23  'R'=52  'T'=54  'X'=58  'S'=53  '@'=40
+               '0'=30  '1'=31  '2'=32  '3'=33
+
+
+================================================================================
+ 7) SE ALGO NÃO FUNCIONAR
+================================================================================
+ Não aparece nenhuma resposta na tela
+   - Confira se a porta COM escolhida é a "Stellaris Virtual Serial Port".
+   - Confira 115200, 8 bits, sem paridade, 1 stop bit, sem fluxo.
+   - Confira se o programa foi mesmo gravado (os LEDs devem apagar ao gravar,
+     porque o Reles_Init começa com todos os relés desligados).
+   - Feche outros terminais abertos na mesma COM.
+
+ A resposta aparece, mas os LEDs não mudam
+   - Confira se gravou o Lab4.hex correto.
+   - Mande #TX1: se nenhum LED acender, o problema está na placa/hardware.
+
+ Só alguns LEDs acendem
+   - Veja a seção 2: cada comando tem que acender um LED específico.
+   - LED1 = PN1 (D1), LED2 = PN0 (D2), LED3 = PF4 (D3), LED4 = PF0 (D4).
+
+ Os caracteres da resposta aparecem embaralhados ou cortados
+   - Provavelmente a COM está configurada com paridade ou baud diferente.
+   - Se estiver usando o Lab4_Serial.exe, confira também a velocidade
+     configurada nele (o programa da placa usa 115200).
+     Se precisar mudar, altere UART_BAUD_RATE no arquivo Lab4\uart.h.
+
+ Um comando válido não faz nada logo após um comando errado
+   - Normal: o pacote errado é descartado e o parser volta ao início.
+     Mande o comando válido novamente.
+
+
+================================================================================
+ FIM DO ROTEIRO
+================================================================================
