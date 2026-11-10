@@ -78,7 +78,12 @@ __heap_limit
 ; The vector table.
 ;
 ;******************************************************************************
-        EXPORT  __Vectors
+;FreeRTOS - Handlers - Inseridos aqui do FreeRTOSConfig.h		
+		EXTERN	PendSV_Handler
+		EXTERN	SVC_Handler
+		EXTERN	SysTick_Handler
+
+		EXPORT  __Vectors
 __Vectors
         DCD     StackMem + Stack            ; Top of Stack
         DCD     Reset_Handler               ; Reset Handler
@@ -91,11 +96,11 @@ __Vectors
         DCD     0                           ; Reserved
         DCD     0                           ; Reserved
         DCD     0                           ; Reserved
-        DCD     IntDefaultHandler           ; SVCall handler
+        DCD     SVC_Handler           		; SVCall handler - Handler alterado para FreeRTOS
         DCD     IntDefaultHandler           ; Debug monitor handler
         DCD     0                           ; Reserved
-        DCD     IntDefaultHandler           ; The PendSV handler
-        DCD     IntDefaultHandler           ; The SysTick handler
+        DCD     PendSV_Handler           	; The PendSV handler - Handler alterado para FreeRTOS
+        DCD     SysTick_Handler           	; The SysTick handler - Handler alterado para FreeRTOS
         DCD     IntDefaultHandler           ; GPIO Port A
         DCD     IntDefaultHandler           ; GPIO Port B
         DCD     IntDefaultHandler           ; GPIO Port C
