@@ -1,0 +1,280 @@
+================================================================================
+ ELF74 - SISTEMAS EMBARCADOS
+ Laboratório 5 - Múltiplos periféricos (I2C, PWM, UART, GPIO)
+ ROTEIRO DE TESTE: comandos seriais, teclado e o que aparece nos dois displays
+================================================================================
+
+ ARQUIVO PARA GRAVAR NA PLACA
+   Lab5\Objects\Lab5.hex        (use este no Keil / gravador)
+   Lab5\Objects\Lab5.bin        (gerado também, para o LMFlashProgrammer)
+
+ COMO CONECTAR A SERIAL
+   Porta serial : a COM virtual do depurador ICDI da Launchpad
+                  (Gerenciador de Dispositivos -> Portas -> "Stellaris Virtual
+                  Serial Port (COMx)")
+   Parâmetros   : 115200 bps, 8 bits, sem paridade, 1 stop bit, sem fluxo
+   Terminal     : sscom3.2.exe ou Lab4_Serial.exe
+
+ LIGAÇÕES
+   Relé 0 -> LED1 -> PN1          Relé 1 -> LED2 -> PN0
+   Relé 2 -> LED3 -> PF4
+   LED com brilho (PWM) -> LED4 -> PF0
+       O LED4 não é mais um relé: é o único dos quatro LEDs com saída de PWM
+       no TM4C1294 (PF0 = M0PWM0). Por isso o comando #R3x não existe mais.
+   Teclado 4x4   : linhas PL0..PL3, colunas PM4..PM7
+   Display gráfico: OLED 128x64 no I2C0 (SCL=PB2, SDA=PB3)
+   Display texto  : OLED 128x32 no I2C7 (SCL=PD0, SDA=PD1)
+
+ O QUE APARECE NO DISPLAY GRÁFICO (o de 128x64)
+   Título "ESTADO DOS RELES" e três caixas identificadas como R0, R1 e R2.
+     - caixa PREENCHIDA com "ON"   = relé ligado
+     - caixa só com contorno e "OFF" = relé desligado
+
+ O QUE APARECE NO DISPLAY DE TEXTO (o de 128x32)
+   LED4/PF0 PWM
+   ELF74 - LAB 5
+   Tecla: X            <- última tecla apertada no teclado
+   Brilho: NN%         <- brilho atual, de 00 a 99%
+   O valor tem sempre 2 dígitos: o que ainda falta aparece como "_"
+   (ex.: "Brilho: 7_%" depois de digitar o 7 e antes de digitar o segundo)
+
+ OBSERVAÇÕES IMPORTANTES
+   - ANTES DE AVALIAR QUALQUER RESULTADO, desligue e religue a alimentação
+     da placa (tirar e recolocar o USB). O microcontrolador reinicia, mas os
+     displays OLED continuam ligados e MANTÊM A IMAGEM ANTERIOR na memória.
+     O botão de RESET não limpa os displays; só cortar a alimentação limpa.
+     Sem isso você pode estar vendo imagem velha e achar que algo falhou.
+   - O refresh do display gráfico leva algumas dezenas de ms, por isso a troca
+     das caixas não é instantânea. É normal.
+   - A serial continua sendo atendida durante esse refresh: pode mandar o
+     próximo comando imediatamente.
+   - Uma tecla segurada NÃO repete. Solte antes de apertar de novo.
+   - O brilho inicial é 50%.
+   - O LED4 (brilho/PWM) é acionado SÓ pelo teclado. Nenhum comando serial
+     (#TX1 inclusive) mexe nele.
+
+
+================================================================================
+ 1) LIGAR E DESLIGAR CADA RELÉ PELA SERIAL
+================================================================================
+ Sempre partindo de #TX0. Confira a resposta na tela, os LEDs e as caixas.
+
+   Comando   Resposta   LED1   LED2   LED3   Display gráfico
+   --------  --------   ----   ----   ----   ---------------------------
+   #TX0      @TX0       OFF    OFF    OFF    3 caixas com contorno
+   #R01      @R01       ON     OFF    OFF    só R0 preenchida
+   #R00      @R00       OFF    OFF    OFF    3 caixas com contorno
+
+   #R11      @R11       OFF    ON     OFF    só R1 preenchida
+   #R10      @R10       OFF    OFF    OFF    3 caixas com contorno
+
+   #R21      @R21       OFF    OFF    ON     só R2 preenchida
+   #R20      @R20       OFF    OFF    OFF    3 caixas com contorno
+
+ Obs.: o comando do relé 3 não existe mais. Veja a seção 4.
+
+
+================================================================================
+ 2) TODOS OS RELÉS DE UMA VEZ
+================================================================================
+
+   Comando   Resposta   LED1   LED2   LED3   Display gráfico
+   --------  --------   ----   ----   ----   ---------------------------
+   #TX1      @TX1       ON     ON     ON     as 3 caixas preenchidas
+   #TX0      @TX0       OFF    OFF    OFF    as 3 com contorno
+
+ Obs.: #TX1 acende só os 3 relés. O LED4 (brilho/PWM) NÃO é afetado por ele.
+
+
+================================================================================
+ 3) STATUS - #TST
+================================================================================
+ O byte de status é 0x40 + valor, com R0 no bit 3, R1 no bit 2 e R2 no bit 1.
+ O bit 0 (que era o relé 3 no Laboratório 4) agora é sempre 0, por isso só
+ aparecem as letras PARES: @ T S B D F H J L N.
+
+   Relés ligados          Comandos para montar        #TST     LEDs
+   ---------------------  --------------------------  -------  ------------
+   (nenhum)               #TX0                        @TS@     OFF OFF OFF
+   R2                     #R21                        @TSB     OFF OFF ON
+   R1                     #R11                        @TSD     OFF ON  OFF
+   R1 + R2                #R11 #R21                   @TSF     OFF ON  ON
+   R0                     #R01                        @TSH     ON  OFF OFF
+   R0 + R2                #R01 #R21                   @TSJ     ON  OFF ON
+   R0 + R1                #R01 #R11                   @TSL     ON  ON  OFF
+   R0 + R1 + R2           #R01 #R11 #R21   (ou #TX1)  @TSN     ON  ON  ON
+
+ Conferência rápida:
+   #TX0 + #TST  ->  @TS@
+   #TX1 + #TST  ->  @TSN
+
+
+================================================================================
+ 4) COMANDOS INVÁLIDOS - não respondem e não mexem em nada
+================================================================================
+ Antes de cada teste mande #TX0. Confira que NADA aparece na tela e que os
+ LEDs e as caixas não mudam.
+
+   Comando   Resposta   Motivo
+   --------  ---------  ----------------------------------------------------
+   #R31      (nenhuma)  o relé 3 não existe mais (o protocolo aceita 0 a 2)
+   #R30      (nenhuma)  idem
+   #R41      (nenhuma)  não existe relé 4
+   #R3X      (nenhuma)  estado tem que ser '0' ou '1'
+   #X01      (nenhuma)  tipo tem que ser 'R' ou 'T'
+   #TXY      (nenhuma)  em #TX o estado tem que ser '0' ou '1'
+   #TSX      (nenhuma)  o #TST termina sempre com 'T'
+   ABC       (nenhuma)  lixo puro, sem '#'
+
+ Se estiver usando o Lab4_Serial.exe, o botão do relé 3 vai parecer "morto":
+ é o comportamento correto deste laboratório.
+
+
+================================================================================
+ 5) AJUSTE DO BRILHO PELO TECLADO
+================================================================================
+   Regra: digite SEMPRE os 2 dígitos do valor (00 a 99) e confirme com '#'.
+         O '#' só faz efeito depois dos 2 dígitos.
+         Com os 2 dígitos já preenchidos, um terceiro dígito é ignorado.
+         '*' apaga a digitação e volta a mostrar o brilho atual.
+
+ Sequência sugerida, partindo do brilho inicial de 50%.
+ Confira a linha "Tecla:" e a linha "Brilho:" no display de texto, e o
+ brilho do LED4 na placa.
+
+   #   Tecla   Display "Brilho:"   Brilho do LED4   O que aconteceu
+   --  -----   ----------------    --------------   -------------------------
+    1  (inicio)      50%                50%          valor inicial
+    2     7          7_%                50%          digitou a dezena
+    3     5          75%                50%          digitou a unidade
+    4     #          75%                75%          confirmou -> PWM em 75%
+   ---------------------------------------------------------------------------
+    5  (reinicia a sequência de testes se quiser)
+   ---------------------------------------------------------------------------
+    6     0          0_%                75%          começou a digitar 00
+    7     0          00%                75%
+    8     #          00%                 0%          confirmou -> LED apaga
+    9     9          9_%                 0%
+   10     9          99%                 0%
+   11     #          99%                99%          quase brilho total
+
+ Apagar a digitação e recomeçar:
+
+   #   Tecla   Display "Brilho:"   Brilho do LED4   O que aconteceu
+   --  -----   ----------------    --------------   -------------------------
+      (partindo de 99%)
+    1     4          4_%                99%
+    2     2          42%                99%
+    3     *          99%                99%          apagou, nada mudou
+    4     5          5_%                99%
+    5     0          50%                99%
+    6     #          50%                50%          confirmou -> PWM em 50%
+
+ '#' antes dos 2 dígitos não faz nada:
+
+   #   Tecla   Display "Brilho:"   Brilho do LED4
+   --  -----   ----------------    --------------
+    1     7          7_%                50%
+    2     #          7_%                50%       <- falta a unidade, nada muda
+    3     0          70%                50%
+    4     #          70%                70%
+
+ Teclas que NÃO mexem no brilho: A, B, C, D.
+   Elas só atualizam a linha "Tecla:".
+   O '#' antes dos 2 dígitos também não faz nada.
+
+
+================================================================================
+ 6) TESTE COMBINADO (o mais próximo da demonstração em sala)
+================================================================================
+ Confira a cada passo que: a serial responde, os LEDs acendem, as caixas do
+ display gráfico mudam e o brilho do LED4 acompanha o teclado.
+
+   #   Ação                      Resultado esperado
+   --  ------------------------  --------------------------------------------
+    1  #TX0 + #TST               @TX0 e @TS@ ; 3 caixas com contorno
+    2  #R01                      @R01 ; LED1 aceso ; caixa R0 preenchida
+    3  #R11                      @R11 ; LED2 aceso ; R0 e R1 preenchidas
+    4  #TST                      @TSL ; 3 caixas (R0, R1 cheias; R2 vazia)
+    5  Tecla 8 0 #               Brilho: 80% ; LED4 bem aceso
+    6  #R21                      @R21 ; LED3 aceso ; as 3 caixas preenchidas
+    7  #TST                      @TSN
+    8  Tecla 2 5 #               Brilho: 25% ; LED4 mais fraco
+    9  #TX0                      @TX0 ; os 3 LEDs apagam ; 3 caixas com contorno
+   10  #TST                      @TS@
+   11  Tecla 0 0 #               Brilho: 00% ; LED4 apaga de vez
+    12  Tecla 9 9 * 0 5 #         Brilho: 05% (o '*' apagou o 99 digitado)
+   13  #R21 enquanto digita      o comando serial é atendido normalmente e a
+        o brilho                 digitação do brilho NÃO é perdida
+
+ Passo 13 com detalhe: aperte '6' (aparece "Brilho: 6_%"), mande #R21 pela
+ serial (responde @R21 e a caixa R2 enche) e depois aperte '0' e '#'. O
+ resultado tem que ser Brilho: 60% e a caixa R2 continua preenchida.
+
+
+================================================================================
+ 7) TABELA DE BYTES (se preferir mandar em hexadecimal)
+================================================================================
+ Todos os bytes são ASCII.
+
+   Comando   Bytes (hex)        Resposta   Bytes (hex)
+   --------  ----------------   --------   ----------------
+   #R01      23 52 30 31        @R01       40 52 30 31
+   #R11      23 52 31 31        @R11       40 52 31 31
+   #R21      23 52 32 31        @R21       40 52 32 31
+   #R00      23 52 30 30        @R00       40 52 30 30
+   #TX1      23 54 58 31        @TX1       40 54 58 31
+   #TX0      23 54 58 30        @TX0       40 54 58 30
+   #TST      23 54 53 54        @TS@       40 54 53 40
+                                @TSN       40 54 53 4E
+
+   Referência: '#'=23  'R'=52  'T'=54  'X'=58  'S'=53  '@'=40
+               '0'=30  '1'=31  '2'=32
+
+
+================================================================================
+ 8) SE ALGO NÃO FUNCIONAR
+================================================================================
+ Não aparece nenhuma resposta na serial
+   - Confira se a COM escolhida é a "Stellaris Virtual Serial Port".
+   - Confira 115200, 8 bits, sem paridade, 1 stop bit, sem fluxo.
+   - Feche outros terminais abertos na mesma COM.
+
+ A serial responde, mas os LEDs dos relés não acendem
+   - Confira se gravou o Lab5.hex correto.
+   - Mande #TX1: se nenhum dos 3 acender, é hardware/gravação.
+
+ O display gráfico (128x64) fica apagado
+   - É o do I2C0, nos pinos PB2 (SCL) e PB3 (SDA), endereço 0x3C.
+   - Confira se o shield está bem encaixado nas duas fileiras.
+
+ O display de texto (128x32) fica apagado
+   - É o do I2C7, nos pinos PD0 (SCL) e PD1 (SDA), endereço 0x3C.
+   - Note que são DOIS barramentos I2C diferentes: um display em cada.
+
+ O texto do display de 128x32 aparece de cabeça para baixo
+   - A biblioteca do professor foi escrita para o painel montado girado 180
+     graus (as funções terminadas em "I", de invertido). Se o seu painel
+     estiver na orientação normal, troque em display.c as chamadas
+     OLED7_sendStrXYI / OLED7_sendCharXYI por OLED7_sendStrXY / OLED7_sendCharXY.
+
+ O LED4 (brilho) não acende em nenhum valor
+   - Ele é o único que usa PWM (PF0 = M0PWM0). Confira se o brilho não está
+     em 00% (display de texto mostra o valor atual) e mande, por exemplo,
+     tecla 5 0 #.
+   - Lembre que #TX1 NÃO acende o LED4: ele comanda só os 3 relés.
+
+ O teclado não responde
+   - Confira se o shield está encaixado (linhas PL0..PL3, colunas PM4..PM7).
+   - Aperte e SOLTE a tecla: o programa só trata a borda de pressionamento,
+     então segurar não repete.
+
+ A caixa do relé demora a mudar no display gráfico
+   - Normal: o refresh completo leva algumas dezenas de ms.
+   - O divisor do I2C sai do SysCtlClockGet(), igual ao exemplo do professor.
+     Na placa ele devolve 2.500.000 Hz (o clock real é 40 MHz), o que deixa o
+     barramento em ~1 MHz. Foi medido funcionando nos dois displays.
+
+================================================================================
+ FIM DO ROTEIRO
+================================================================================

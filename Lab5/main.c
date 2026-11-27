@@ -1,75 +1,114 @@
-/*##############################################################################
-Prof. Paulo Denis Garcez da Luz - 2023/2S
-Desenvolvido para a placa EK-TM4C1294XL utilizando o SDK TivaWare no KEIL
-Programa exemplo de blink(1s) usando apenas 1 led e Periférico SysTick.
-##############################################################################*/
-
-//TivaWare uC: Usado internamente para identificar o uC em alguns .h da TivaWare
 #define PART_TM4C1294NCPDT 1
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_memmap.h"
-#include "driverlib/debug.h"
-#include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/systick.h"
+#include "uart.h"
+#include "reles.h"
+#include "pwm.h"
+#include "brilho.h"
+#include "teclado.h"
+#include "display.h"
+#include "protocolo.h"
 
-//variável que conta os ticks(1ms) - Volatile não permite o compilador otimizar o código 
-static volatile unsigned int SysTicks;
+#define PERIODO_TECLADO 20 // Usado para debounce do teclado, le a cada 20 ms
+#define BRILHO_INICIAL 50
 
-//Protótipos de funções criadas no programa, código depois do main
+uint32_t SysClock;
+static volatile uint32_t SysTicks1ms;
+
 void SetupSystick(void);
 void SysTickIntHandler(void);
 
 int main(void)
 {
-  //estado do led
-  bool Led=false;
-  //Configura o clock para utilizar o xtal interno de 16MHz com PLL para 40MHz
-  SysCtlClockFreqSet(SYSCTL_OSC_INT | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_320, 40000000);
-  //habilitar gpio port N
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
-  //aguardar o periférico ficar pronto para uso
-  while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION)) {/*espera habilitar o port*/}
-  //configura o pin_0 como saída
-  GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0);
-  //executa configuração e inicialização do SysTick
+  uint8_t tecla;
+  uint8_t teclaAnterior = 0;
+  uint8_t estadoRele;
+  uint32_t proximaTecla;
+
+  // Configura o clock para utilizar o xtal interno de 16MHz com PLL para 40MHz
+  SysClock = SysCtlClockFreqSet(SYSCTL_OSC_INT | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_320, 40000000);
   SetupSystick();
-  //loop infinito
+
+  UART0_Init(SysClock);
+  Reles_Init();
+  Init_PWM_Brilho();
+  Teclado_Init();
+  Protocolo_Init();
+  Display_Init();
+
+  // Define o brilho inicial e mostra no display
+  Set_Brilho_Inicial(BRILHO_INICIAL);
+  Display7_Brilho(BRILHO_INICIAL);
+
+  // Desenha o estado inicial dos reles no display
+  estadoRele = Rele_Status();
+  Display0_Estado(estadoRele);
+
+  proximaTecla = SysTicks1ms + PERIODO_TECLADO;
+
   while (1)
+  {
+    // Limpa a UART
+    UART0_Drena();
+    Protocolo_Processa();
+
+    // Se rele mudou de estado desenha novamente
+    if (Rele_Status() != estadoRele)
+    {
+      estadoRele = Rele_Status();
+      Display0_Estado(estadoRele);
+    }
+
+    // Le o teclado a cada 20ms
+    if ((int32_t)(SysTicks1ms - proximaTecla) >= 0)
+    {
+      proximaTecla = SysTicks1ms + PERIODO_TECLADO;
+      tecla = Teclado_Le();
+
+      if (tecla != teclaAnterior)
+      {
+        teclaAnterior = tecla;
+
+        if (tecla)
         {
-          //se já passou 1000ms = 1s, alterar o estado do led
-          if (SysTicks>=1000)
-             {
-               //zera contagem do SysTick (uso exclusivo para o led)
-               SysTicks=0;
-               //inverte estado do led
-               Led=!Led;
-               //envia o estado do led para o pin 0 do port N
-               GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, Led);
-             }
+          Display7_Tecla(tecla);
+
+          // Atualiza o display do brilho so quando algo mudou
+          if (Brilho_Tecla(tecla))
+          {
+            if (Editando_Brilho())
+            {
+              Display7_Edicao(Get_Brilho_Digito1(), Get_Brilho_Digito2());
+            }
+            else
+            {
+              Display7_Brilho(Get_Brilho());
+            }
+          }
         }
+      }
+    }
+  }
 }
 
-//função de tratamento da interrupção do SysTick
 void SysTickIntHandler(void)
 {
-  SysTicks++;
+  SysTicks1ms++;
 }
 
-//função para configurar e inicializar o periférico Systick a 1ms
 void SetupSystick(void)
 {
-  SysTicks=0;
-  //desliga o SysTick para poder configurar
+  SysTicks1ms = 0;
+
   SysTickDisable();
-  //clock 40MHz <=> SysTick deve contar 1ms=40k-1 do Systick_Counter - 12 trocas de contexto PP->IRQ - (1T Mov, 1T Movt, 3T LDR, 1T INC ... STR e IRQ->PP já não contabilizam atrasos para a variável)  
-  SysTickPeriodSet(40000-1-12-6);
-  //registra a função de atendimento da interrupção
+
+  // SysClock / 1000 contagens = 1 ms, descontando a troca de contexto
+  SysTickPeriodSet(SysClock / 1000 - 1 - 12 - 6);
   SysTickIntRegister(SysTickIntHandler);
-  //liga o atendimento via interrupção
   SysTickIntEnable();
-  //liga novamente o SysTick
   SysTickEnable();
 }

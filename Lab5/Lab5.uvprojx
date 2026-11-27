@@ -389,6 +389,106 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>reles.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\reles.c</FilePath>
+            </File>
+            <File>
+              <FileName>reles.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\reles.h</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\pwm.h</FilePath>
+            </File>
+            <File>
+              <FileName>brilho.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\brilho.c</FilePath>
+            </File>
+            <File>
+              <FileName>brilho.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\brilho.h</FilePath>
+            </File>
+            <File>
+              <FileName>teclado.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\teclado.c</FilePath>
+            </File>
+            <File>
+              <FileName>teclado.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\teclado.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\i2c.h</FilePath>
+            </File>
+            <File>
+              <FileName>ssd1306.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ssd1306.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssd1306.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\ssd1306.h</FilePath>
+            </File>
+            <File>
+              <FileName>data.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\data.h</FilePath>
+            </File>
+            <File>
+              <FileName>display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\display.c</FilePath>
+            </File>
+            <File>
+              <FileName>display.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\display.h</FilePath>
+            </File>
+            <File>
+              <FileName>protocolo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\protocolo.c</FilePath>
+            </File>
+            <File>
+              <FileName>protocolo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\protocolo.h</FilePath>
+            </File>
+            <File>
+              <FileName>uartstdio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TivaWare_C_Series-2.2.0.295\utils\uartstdio.c</FilePath>
+            </File>
+            <File>
               <FileName>startup_rvmdk.S</FileName>
               <FileType>2</FileType>
               <FilePath>.\startup_rvmdk.S</FilePath>
@@ -402,6 +502,11 @@
               <FileName>readme.txt</FileName>
               <FileType>5</FileType>
               <FilePath>.\readme.txt</FilePath>
+            </File>
+            <File>
+              <FileName>Comandos_Teste.txt</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Comandos_Teste.txt</FilePath>
             </File>
           </Files>
         </Group>
